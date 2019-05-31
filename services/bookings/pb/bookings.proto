@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package bootcamp.srv.bookings;
+
+import "google/api/annotations.proto";
+
+service BookingService {
+  rpc CreateBooking(CreateBookingRequest) returns (CreateBookingResponse) {
+    option (google.api.http) = {
+      post: "/v1/createBooking"
+      body: "*"
+    };
+  };
+}
+
+message CreateBookingRequest {}
+message CreateBookingResponse {}
