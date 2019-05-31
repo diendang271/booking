@@ -1,6 +1,6 @@
 # VN Bootcamp Services
 
-Contains sample services 'bookings' and 'agents'. See https://wiki.grab.com/pages/viewpage.action?pageId=242545747
+Contains sample services 'bookings' and 'agents'
 
 ## Running the services
 
@@ -14,19 +14,17 @@ Contains sample services 'bookings' and 'agents'. See https://wiki.grab.com/page
 ### createBooking
 
 ```
-  curl http://localhost:8080/v1/createBooking -d '{"location":{"latitude":1.3521, "longitude": 103.8198}}'
+  curl http://localhost:8080/v1/createBooking -d ''
 ```
 
-### getBookingState
+## Test bookings
+
+Some sample data has already been created with the following BookingIDs. Use the dynamodb-admin tool below to view them.
 
 ```
-  curl http://localhost:8080/v1/getBookingState?booking_id=388b53c959366a536f13745bcbc13e77
-```
-
-### completeBooking
-
-```
-  curl http://localhost:8080/v1/completeBooking -d '{"booking_id" "e106c895813eb88062a023f5b6ff7160"}'
+test-booking-1
+test-booking-2
+test-booking-3
 ```
 
 ## dynamodb-admin
