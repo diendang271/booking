@@ -34,7 +34,7 @@ func (m *CreateBookingRequest) Reset()         { *m = CreateBookingRequest{} }
 func (m *CreateBookingRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateBookingRequest) ProtoMessage()    {}
 func (*CreateBookingRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bookings_05cf54aa35482ed6, []int{0}
+	return fileDescriptor_bookings_85098bf3e30a7f1c, []int{0}
 }
 func (m *CreateBookingRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateBookingRequest.Unmarshal(m, b)
@@ -64,7 +64,7 @@ func (m *CreateBookingResponse) Reset()         { *m = CreateBookingResponse{} }
 func (m *CreateBookingResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateBookingResponse) ProtoMessage()    {}
 func (*CreateBookingResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bookings_05cf54aa35482ed6, []int{1}
+	return fileDescriptor_bookings_85098bf3e30a7f1c, []int{1}
 }
 func (m *CreateBookingResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateBookingResponse.Unmarshal(m, b)
@@ -161,9 +161,9 @@ var _BookingService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "pb/bookings.proto",
 }
 
-func init() { proto.RegisterFile("pb/bookings.proto", fileDescriptor_bookings_05cf54aa35482ed6) }
+func init() { proto.RegisterFile("pb/bookings.proto", fileDescriptor_bookings_85098bf3e30a7f1c) }
 
-var fileDescriptor_bookings_05cf54aa35482ed6 = []byte{
+var fileDescriptor_bookings_85098bf3e30a7f1c = []byte{
 	// 179 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2c, 0x48, 0xd2, 0x4f,
 	0xca, 0xcf, 0xcf, 0xce, 0xcc, 0x4b, 0x2f, 0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x4d,

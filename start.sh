@@ -1,4 +1,9 @@
 #!/bin/bash
+echo 'Building booking service...'
+make all
+
+# Run docker compose
+echo 'Starting docker containers...'
 docker-compose up --build -d
 DDB="docker-compose run -e AWS_ACCESS_KEY_ID=A -e AWS_SECRET_ACCESS_KEY=B awscli aws dynamodb"
 $DDB create-table --table-name bootcamp_bookings \

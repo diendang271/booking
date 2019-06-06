@@ -1,3 +1,3 @@
 FROM alpine
-ADD bookings-srv /bookings-srv
+ADD bookings-srv .
 ENTRYPOINT [ "/bookings-srv" ]
