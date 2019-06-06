@@ -2,11 +2,25 @@
 
 Contains sample services 'bookings' and 'agents'
 
+## Pre-requisites
+
+In order to get started, make sure you have Golang, Docker and Protobuf installed:
+
+1. Install Docker on MacOS (https://docs.docker.com/docker-for-mac/install/).
+2. Install Protobuf through Homebrew (https://brew.sh/) by typing `brew install protobuf` in Terminal.
+3. Install Golang via (https://golang.org/doc/install) or typing `brew install go` in Terminal. Make sure you have go modules enabled.
+
 ## Running the services
 
+In order to run the services, simply open up the Terminal and call the script we have prepared for you.
 ```
-  make
-  ./start.sh
+./start.sh
+```
+
+This script takes care of building and deploying `bookings` service into a docker container along with other containers such as DynamoDB and `agents` service. If at any point you simply want to build, you can use the Makefile we've prepared.
+
+```
+make all
 ```
 
 ## Testing the bookings service
