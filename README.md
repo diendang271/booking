@@ -10,6 +10,15 @@ In order to get started, make sure you have Golang, Docker and Protobuf installe
 2. Install Protobuf through Homebrew (https://brew.sh/) by typing `brew install protobuf` in Terminal.
 3. Install Golang via (https://golang.org/doc/install) or typing `brew install go` in Terminal. Make sure you have go modules enabled.
 
+Clone this repository by using `go get`:
+
+```
+go get gitlab.myteksi.net/michael.cartmell/bootcamp-skeleton/...
+cd $GOPATH/src/michael.cartmell/bootcamp-skeleton
+```
+
+Note the code must be run from `$GOPATH/src`. (If you don't have `$GOPATH` set, see https://github.com/golang/go/wiki/SettingGOPATH)
+
 ## Running the services
 
 In order to run the services, simply open up the Terminal and call the script we have prepared for you.
