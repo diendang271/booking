@@ -9,6 +9,7 @@ In order to get started, make sure you have Golang, Docker and Protobuf installe
 1. Install Docker on MacOS (https://docs.docker.com/docker-for-mac/install/).
 2. Install Protobuf through Homebrew (https://brew.sh/) by typing `brew install protobuf` in Terminal.
 3. Install Golang via (https://golang.org/doc/install) or typing `brew install go` in Terminal. Make sure you have go modules enabled.
+4. Install Go-Micro Plugin for Protobuf (https://github.com/micro/protoc-gen-micro) by typing `go get github.com/micro/protoc-gen-micro` in Terminal.
 
 Clone this repository by using `go get`:
 
