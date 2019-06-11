@@ -1,7 +1,6 @@
-
 GOPATH:=$(shell go env GOPATH)
 export CGO_ENABLED=0
-
+export GOOS=linux
 
 .PHONY: proto
 proto:
