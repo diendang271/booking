@@ -19,6 +19,12 @@ cd $GOPATH/src/michael.cartmell/bootcamp-skeleton
 
 Note the code must be run from `$GOPATH/src`. (If you don't have `$GOPATH` set, see https://github.com/golang/go/wiki/SettingGOPATH)
 
+This repository uses vendor, so you will need to disable Go Modules for it to work:
+
+```
+export GO111MODULE=off
+```
+
 ## Running the services
 
 In order to run the services, simply open up the Terminal and call the script we have prepared for you.
