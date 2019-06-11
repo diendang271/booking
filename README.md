@@ -10,6 +10,7 @@ In order to get started, make sure you have Golang, Docker and Protobuf installe
 2. Install Protobuf through Homebrew (https://brew.sh/) by typing `brew install protobuf` in Terminal.
 3. Install Golang via (https://golang.org/doc/install) or typing `brew install go` in Terminal. Make sure you have go modules enabled.
 4. Install Go-Micro Plugin for Protobuf (https://github.com/micro/protoc-gen-micro) by typing `go get github.com/micro/protoc-gen-micro` in Terminal.
+5. Install gRPC Plugin for Protobuf (https://github.com/grpc-ecosystem/grpc-gateway) by typing `go get -v -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway` in Terminal.
 
 Clone this repository by using `go get`:
 
