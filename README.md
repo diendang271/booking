@@ -16,7 +16,7 @@ Clone this repository by using `go get`:
 
 ```
 go get gitlab.com/grab-learning-development/bootcamp-skeleton/...
-cd $GOPATH/src/michael.cartmell/bootcamp-skeleton
+cd $GOPATH/src/gitlab.com/grab-learning-development/bootcamp-skeleton
 ```
 
 Note the code must be run from `$GOPATH/src`. (If you don't have `$GOPATH` set, see https://github.com/golang/go/wiki/SettingGOPATH)
