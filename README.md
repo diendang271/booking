@@ -1,4 +1,4 @@
-# VN Bootcamp Services
+# Grab Bootcamp Services
 
 Contains sample services 'bookings' and 'agents'
 
