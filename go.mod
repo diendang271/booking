@@ -1,3 +1,3 @@
-module gitlab.myteksi.net/michael.cartmell/bootcamp-skeleton
+module gitlab.com/grab-learning-development/bootcamp-skeleton
 
 go 1.12

@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-log/log"
 	"github.com/micro/go-micro/client"
-	agents_pb "gitlab.myteksi.net/michael.cartmell/bootcamp-skeleton/services/agents/pb"
-	"gitlab.myteksi.net/michael.cartmell/bootcamp-skeleton/services/bookings/models"
-	pb "gitlab.myteksi.net/michael.cartmell/bootcamp-skeleton/services/bookings/pb"
+	agents_pb "gitlab.com/grab-learning-development/bootcamp-skeleton/services/agents/pb"
+	"gitlab.com/grab-learning-development/bootcamp-skeleton/services/bookings/models"
+	pb "gitlab.com/grab-learning-development/bootcamp-skeleton/services/bookings/pb"
 )
 
 type AgentService interface {

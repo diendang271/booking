@@ -15,7 +15,7 @@ In order to get started, make sure you have Golang, Docker and Protobuf installe
 Clone this repository by using `go get`:
 
 ```
-go get gitlab.myteksi.net/michael.cartmell/bootcamp-skeleton/...
+go get gitlab.com/grab-learning-development/bootcamp-skeleton/...
 cd $GOPATH/src/michael.cartmell/bootcamp-skeleton
 ```
 

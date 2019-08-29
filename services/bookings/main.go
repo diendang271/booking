@@ -14,11 +14,11 @@ import (
 	"github.com/micro/go-log"
 	"github.com/micro/go-micro"
 	"github.com/micro/go-micro/server"
-	agentspb "gitlab.myteksi.net/michael.cartmell/bootcamp-skeleton/services/agents/pb"
-	gwpb "gitlab.myteksi.net/michael.cartmell/bootcamp-skeleton/services/bookings/gateway/pb"
-	"gitlab.myteksi.net/michael.cartmell/bootcamp-skeleton/services/bookings/handlers"
-	"gitlab.myteksi.net/michael.cartmell/bootcamp-skeleton/services/bookings/models"
-	pb "gitlab.myteksi.net/michael.cartmell/bootcamp-skeleton/services/bookings/pb"
+	agentspb "gitlab.com/grab-learning-development/bootcamp-skeleton/services/agents/pb"
+	gwpb "gitlab.com/grab-learning-development/bootcamp-skeleton/services/bookings/gateway/pb"
+	"gitlab.com/grab-learning-development/bootcamp-skeleton/services/bookings/handlers"
+	"gitlab.com/grab-learning-development/bootcamp-skeleton/services/bookings/models"
+	pb "gitlab.com/grab-learning-development/bootcamp-skeleton/services/bookings/pb"
 	"google.golang.org/grpc"
 )
 
