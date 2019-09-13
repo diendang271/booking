@@ -110,8 +110,8 @@ func Listen(entries chan<- *ServiceEntry, exit chan struct{}) error {
 	// Start listening for response packets
 	msgCh := make(chan *dns.Msg, 32)
 
-	go client.recv(client.ipv4MulticastConn, msgCh)
-	go client.recv(client.ipv6MulticastConn, msgCh)
+	go client.recv(client.ipv4UnicastConn, msgCh)
+	go client.recv(client.ipv6UnicastConn, msgCh)
 	go client.recv(client.ipv4MulticastConn, msgCh)
 	go client.recv(client.ipv6MulticastConn, msgCh)
 
@@ -178,13 +178,10 @@ type client struct {
 func newClient() (*client, error) {
 	// TODO(reddaly): At least attempt to bind to the port required in the spec.
 	// Create a IPv4 listener
-	uconn4, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
-	if err != nil {
-		log.Printf("[ERR] mdns: Failed to bind to udp4 port: %v", err)
-	}
-	uconn6, err := net.ListenUDP("udp6", &net.UDPAddr{IP: net.IPv6zero, Port: 0})
-	if err != nil {
-		log.Printf("[ERR] mdns: Failed to bind to udp6 port: %v", err)
+	uconn4, err4 := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
+	uconn6, err6 := net.ListenUDP("udp6", &net.UDPAddr{IP: net.IPv6zero, Port: 0})
+	if err4 != nil && err6 != nil {
+		log.Printf("[ERR] mdns: Failed to bind to udp port: %v %v", err4, err6)
 	}
 
 	if uconn4 == nil && uconn6 == nil {
@@ -194,17 +191,15 @@ func newClient() (*client, error) {
 	if uconn4 == nil {
 		uconn4 = &net.UDPConn{}
 	}
+
 	if uconn6 == nil {
 		uconn6 = &net.UDPConn{}
 	}
 
-	mconn4, err := net.ListenUDP("udp4", mdnsWildcardAddrIPv4)
-	if err != nil {
-		log.Printf("[ERR] mdns: Failed to bind to udp4 port: %v", err)
-	}
-	mconn6, err := net.ListenUDP("udp6", mdnsWildcardAddrIPv6)
-	if err != nil {
-		log.Printf("[ERR] mdns: Failed to bind to udp6 port: %v", err)
+	mconn4, err4 := net.ListenUDP("udp4", mdnsWildcardAddrIPv4)
+	mconn6, err6 := net.ListenUDP("udp6", mdnsWildcardAddrIPv6)
+	if err4 != nil && err6 != nil {
+		log.Printf("[ERR] mdns: Failed to bind to udp port: %v %v", err4, err6)
 	}
 
 	if mconn4 == nil && mconn6 == nil {
@@ -214,12 +209,15 @@ func newClient() (*client, error) {
 	if mconn4 == nil {
 		mconn4 = &net.UDPConn{}
 	}
+
 	if mconn6 == nil {
 		mconn6 = &net.UDPConn{}
 	}
 
 	p1 := ipv4.NewPacketConn(mconn4)
 	p2 := ipv6.NewPacketConn(mconn6)
+	p1.SetMulticastLoopback(true)
+	p2.SetMulticastLoopback(true)
 
 	ifaces, err := net.Interfaces()
 	if err != nil {

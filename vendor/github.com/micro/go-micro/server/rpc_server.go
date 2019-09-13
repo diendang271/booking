@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"net"
 	"runtime/debug"
 	"sort"
 	"strconv"
@@ -17,6 +18,8 @@ import (
 	"github.com/micro/go-micro/transport"
 	"github.com/micro/go-micro/util/addr"
 	log "github.com/micro/go-micro/util/log"
+	mnet "github.com/micro/go-micro/util/net"
+	"github.com/micro/go-micro/util/socket"
 )
 
 type rpcServer struct {
@@ -27,6 +30,8 @@ type rpcServer struct {
 	opts        Options
 	handlers    map[string]Handler
 	subscribers map[*subscriber][]broker.Subscriber
+	// marks the serve as started
+	started bool
 	// used for first registration
 	registered bool
 	// graceful exit
@@ -35,9 +40,12 @@ type rpcServer struct {
 
 func newRpcServer(opts ...Option) Server {
 	options := newOptions(opts...)
+	router := newRpcRouter()
+	router.hdlrWrappers = options.HdlrWrappers
+
 	return &rpcServer{
 		opts:        options,
-		router:      DefaultRouter,
+		router:      router,
 		handlers:    make(map[string]Handler),
 		subscribers: make(map[*subscriber][]broker.Subscriber),
 		exit:        make(chan chan error),
@@ -45,12 +53,37 @@ func newRpcServer(opts ...Option) Server {
 	}
 }
 
+type rpcRouter struct {
+	h func(context.Context, Request, interface{}) error
+}
+
+func (r rpcRouter) ServeRequest(ctx context.Context, req Request, rsp Response) error {
+	return r.h(ctx, req, rsp)
+}
+
 // ServeConn serves a single connection
 func (s *rpcServer) ServeConn(sock transport.Socket) {
+	var wg sync.WaitGroup
+	var mtx sync.RWMutex
+	// streams are multiplexed on Micro-Stream or Micro-Id header
+	sockets := make(map[string]*socket.Socket)
+
 	defer func() {
-		// close socket
+		// wait till done
+		wg.Wait()
+
+		// close underlying socket
 		sock.Close()
 
+		// close the sockets
+		mtx.Lock()
+		for id, psock := range sockets {
+			psock.Close()
+			delete(sockets, id)
+		}
+		mtx.Unlock()
+
+		// recover any panics
 		if r := recover(); r != nil {
 			log.Log("panic recovered: ", r)
 			log.Log(string(debug.Stack()))
@@ -63,17 +96,72 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 			return
 		}
 
+		// use Micro-Stream as the stream identifier
+		// in the event its blank we'll always process
+		// on the same socket
+		id := msg.Header["Micro-Stream"]
+
+		// if there's no stream id then its a standard request
+		// use the Micro-Id
+		if len(id) == 0 {
+			id = msg.Header["Micro-Id"]
+		}
+
+		// we're starting processing
+		wg.Add(1)
+
 		// add to wait group if "wait" is opt-in
 		if s.wg != nil {
 			s.wg.Add(1)
 		}
+
+		// check we have an existing socket
+		mtx.RLock()
+		psock, ok := sockets[id]
+		mtx.RUnlock()
+
+		// got the socket
+		if ok {
+			// accept the message
+			if err := psock.Accept(&msg); err != nil {
+				// delete the socket
+				mtx.Lock()
+				delete(sockets, id)
+				mtx.Unlock()
+			}
+
+			// done(1)
+			if s.wg != nil {
+				s.wg.Done()
+			}
+
+			wg.Done()
+
+			// continue to the next message
+			continue
+		}
+
+		// no socket was found
+		psock = socket.New()
+		psock.SetLocal(sock.Local())
+		psock.SetRemote(sock.Remote())
+
+		// load the socket
+		psock.Accept(&msg)
+
+		// save a new socket
+		mtx.Lock()
+		sockets[id] = psock
+		mtx.Unlock()
+
+		// now walk the usual path
 
 		// we use this Timeout header to set a server deadline
 		to := msg.Header["Timeout"]
 		// we use this Content-Type header to identify the codec needed
 		ct := msg.Header["Content-Type"]
 
-		// strip our headers
+		// copy the message headers
 		hdr := make(map[string]string)
 		for k, v := range msg.Header {
 			hdr[k] = v
@@ -83,17 +171,17 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 		hdr["Local"] = sock.Local()
 		hdr["Remote"] = sock.Remote()
 
-		// create new context
+		// create new context with the metadata
 		ctx := metadata.NewContext(context.Background(), hdr)
 
-		// set the timeout if we have it
+		// set the timeout from the header if we have it
 		if len(to) > 0 {
 			if n, err := strconv.ParseUint(to, 10, 64); err == nil {
 				ctx, _ = context.WithTimeout(ctx, time.Duration(n))
 			}
 		}
 
-		// no content type
+		// if there's no content type default it
 		if len(ct) == 0 {
 			msg.Header["Content-Type"] = DefaultContentType
 			ct = DefaultContentType
@@ -113,14 +201,26 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 					},
 					Body: []byte(err.Error()),
 				})
+
 				if s.wg != nil {
 					s.wg.Done()
 				}
+
+				wg.Done()
+
 				return
 			}
 		}
 
-		rcodec := newRpcCodec(&msg, sock, cf)
+		rcodec := newRpcCodec(&msg, psock, cf)
+		protocol := rcodec.String()
+
+		// check stream id
+		var stream bool
+
+		if v := getHeader("Micro-Stream", msg.Header); len(v) > 0 {
+			stream = true
+		}
 
 		// internal request
 		request := &rpcRequest{
@@ -131,56 +231,101 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 			codec:       rcodec,
 			header:      msg.Header,
 			body:        msg.Body,
-			socket:      sock,
-			stream:      true,
+			socket:      psock,
+			stream:      stream,
 		}
 
 		// internal response
 		response := &rpcResponse{
 			header: make(map[string]string),
-			socket: sock,
+			socket: psock,
 			codec:  rcodec,
 		}
 
 		// set router
-		r := s.opts.Router
+		r := Router(s.router)
 
-		// if nil use default router
-		if s.opts.Router == nil {
-			r = s.router
-		}
-
-		// create a wrapped function
-		handler := func(ctx context.Context, req Request, rsp interface{}) error {
-			return r.ServeRequest(ctx, req, rsp.(Response))
-		}
-
-		for i := len(s.opts.HdlrWrappers); i > 0; i-- {
-			handler = s.opts.HdlrWrappers[i-1](handler)
-		}
-
-		// TODO: handle error better
-		if err := handler(ctx, request, response); err != nil {
-			// write an error response
-			err = rcodec.Write(&codec.Message{
-				Header: msg.Header,
-				Error:  err.Error(),
-				Type:   codec.Error,
-			}, nil)
-			// could not write the error response
-			if err != nil {
-				log.Logf("rpc: unable to write error response: %v", err)
+		// if not nil use the router specified
+		if s.opts.Router != nil {
+			// create a wrapped function
+			handler := func(ctx context.Context, req Request, rsp interface{}) error {
+				return s.opts.Router.ServeRequest(ctx, req, rsp.(Response))
 			}
+
+			// execute the wrapper for it
+			for i := len(s.opts.HdlrWrappers); i > 0; i-- {
+				handler = s.opts.HdlrWrappers[i-1](handler)
+			}
+
+			// set the router
+			r = rpcRouter{handler}
+		}
+
+		// wait for processing to exit
+		wg.Add(1)
+
+		// process the outbound messages from the socket
+		go func(id string, psock *socket.Socket) {
+			defer func() {
+				// TODO: don't hack this but if its grpc just break out of the stream
+				// We do this because the underlying connection is h2 and its a stream
+				switch protocol {
+				case "grpc":
+					sock.Close()
+				}
+
+				wg.Done()
+			}()
+
+			for {
+				// get the message from our internal handler/stream
+				m := new(transport.Message)
+				if err := psock.Process(m); err != nil {
+					// delete the socket
+					mtx.Lock()
+					delete(sockets, id)
+					mtx.Unlock()
+					return
+				}
+
+				// send the message back over the socket
+				if err := sock.Send(m); err != nil {
+					return
+				}
+			}
+		}(id, psock)
+
+		// serve the request in a go routine as this may be a stream
+		go func(id string, psock *socket.Socket) {
+			defer psock.Close()
+
+			// serve the actual request using the request router
+			if err := r.ServeRequest(ctx, request, response); err != nil {
+				// write an error response
+				err = rcodec.Write(&codec.Message{
+					Header: msg.Header,
+					Error:  err.Error(),
+					Type:   codec.Error,
+				}, nil)
+
+				// could not write the error response
+				if err != nil {
+					log.Logf("rpc: unable to write error response: %v", err)
+				}
+			}
+
+			mtx.Lock()
+			delete(sockets, id)
+			mtx.Unlock()
+
+			// signal we're done
 			if s.wg != nil {
 				s.wg.Done()
 			}
-			return
-		}
 
-		// done
-		if s.wg != nil {
-			s.wg.Done()
-		}
+			// done with this socket
+			wg.Done()
+		}(id, psock)
 	}
 }
 
@@ -206,6 +351,15 @@ func (s *rpcServer) Init(opts ...Option) error {
 	for _, opt := range opts {
 		opt(&s.opts)
 	}
+
+	// update router if its the default
+	if s.opts.Router == nil {
+		r := newRpcRouter()
+		r.hdlrWrappers = s.opts.HdlrWrappers
+		r.serviceMap = s.router.serviceMap
+		s.router = r
+	}
+
 	s.Unlock()
 	return nil
 }
@@ -255,10 +409,11 @@ func (s *rpcServer) Subscribe(sb Subscriber) error {
 }
 
 func (s *rpcServer) Register() error {
+	var err error
+	var advt, host, port string
+
 	// parse address for host, port
 	config := s.Options()
-	var advt, host string
-	var port int
 
 	// check the advertise address first
 	// if it exists then use it, otherwise
@@ -269,12 +424,14 @@ func (s *rpcServer) Register() error {
 		advt = config.Address
 	}
 
-	parts := strings.Split(advt, ":")
-	if len(parts) > 1 {
-		host = strings.Join(parts[:len(parts)-1], ":")
-		port, _ = strconv.Atoi(parts[len(parts)-1])
+	if cnt := strings.Count(advt, ":"); cnt >= 1 {
+		// ipv6 address in format [host]:port or ipv4 host:port
+		host, port, err = net.SplitHostPort(advt)
+		if err != nil {
+			return err
+		}
 	} else {
-		host = parts[0]
+		host = advt
 	}
 
 	addr, err := addr.Extract(host)
@@ -288,11 +445,15 @@ func (s *rpcServer) Register() error {
 		md[k] = v
 	}
 
+	// mq-rpc(eg. nats) doesn't need the port. its addr is queue name.
+	if port != "" {
+		addr = mnet.HostPort(addr, port)
+	}
+
 	// register service
 	node := &registry.Node{
 		Id:       config.Name + "-" + config.Id,
 		Address:  addr,
-		Port:     port,
 		Metadata: md,
 	}
 
@@ -384,6 +545,7 @@ func (s *rpcServer) Register() error {
 		if err != nil {
 			return err
 		}
+		log.Logf("Subscribing %s to topic: %s", node.Id, sub.Topic())
 		s.subscribers[sb] = []broker.Subscriber{sub}
 	}
 
@@ -391,9 +553,10 @@ func (s *rpcServer) Register() error {
 }
 
 func (s *rpcServer) Deregister() error {
+	var err error
+	var advt, host, port string
+
 	config := s.Options()
-	var advt, host string
-	var port int
 
 	// check the advertise address first
 	// if it exists then use it, otherwise
@@ -404,12 +567,14 @@ func (s *rpcServer) Deregister() error {
 		advt = config.Address
 	}
 
-	parts := strings.Split(advt, ":")
-	if len(parts) > 1 {
-		host = strings.Join(parts[:len(parts)-1], ":")
-		port, _ = strconv.Atoi(parts[len(parts)-1])
+	if cnt := strings.Count(advt, ":"); cnt >= 1 {
+		// ipv6 address in format [host]:port or ipv4 host:port
+		host, port, err = net.SplitHostPort(advt)
+		if err != nil {
+			return err
+		}
 	} else {
-		host = parts[0]
+		host = advt
 	}
 
 	addr, err := addr.Extract(host)
@@ -417,10 +582,14 @@ func (s *rpcServer) Deregister() error {
 		return err
 	}
 
+	// mq-rpc(eg. nats) doesn't need the port. its addr is queue name.
+	if port != "" {
+		addr = mnet.HostPort(addr, port)
+	}
+
 	node := &registry.Node{
 		Id:      config.Name + "-" + config.Id,
 		Address: addr,
-		Port:    port,
 	}
 
 	service := &registry.Service{
@@ -445,7 +614,7 @@ func (s *rpcServer) Deregister() error {
 
 	for sb, subs := range s.subscribers {
 		for _, sub := range subs {
-			log.Logf("Unsubscribing from topic: %s", sub.Topic())
+			log.Logf("Unsubscribing %s from topic: %s", node.Id, sub.Topic())
 			sub.Unsubscribe()
 		}
 		s.subscribers[sb] = nil
@@ -456,7 +625,13 @@ func (s *rpcServer) Deregister() error {
 }
 
 func (s *rpcServer) Start() error {
-	registerDebugHandler(s)
+	s.RLock()
+	if s.started {
+		s.RUnlock()
+		return nil
+	}
+	s.RUnlock()
+
 	config := s.Options()
 
 	// start listening on the transport
@@ -478,7 +653,9 @@ func (s *rpcServer) Start() error {
 		return err
 	}
 
-	log.Logf("Broker [%s] Connected to %s", config.Broker.String(), config.Broker.Address())
+	bname := config.Broker.String()
+
+	log.Logf("Broker [%s] Connected to %s", bname, config.Broker.Address())
 
 	// use RegisterCheck func before register
 	if err = s.opts.RegisterCheck(s.opts.Context); err != nil {
@@ -579,15 +756,36 @@ func (s *rpcServer) Start() error {
 		s.Unlock()
 	}()
 
+	// mark the server as started
+	s.Lock()
+	s.started = true
+	s.Unlock()
+
 	return nil
 }
 
 func (s *rpcServer) Stop() error {
+	s.RLock()
+	if !s.started {
+		s.RUnlock()
+		return nil
+	}
+	s.RUnlock()
+
 	ch := make(chan error)
 	s.exit <- ch
-	return <-ch
+
+	var err error
+	select {
+	case err = <-ch:
+		s.Lock()
+		s.started = false
+		s.Unlock()
+	}
+
+	return err
 }
 
 func (s *rpcServer) String() string {
-	return "rpc"
+	return "mucp"
 }

@@ -3,9 +3,11 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/micro/go-micro/codec"
@@ -116,8 +118,8 @@ type Option func(*Options)
 
 var (
 	DefaultAddress              = ":0"
-	DefaultName                 = "server"
-	DefaultVersion              = "latest"
+	DefaultName                 = "go.micro.server"
+	DefaultVersion              = fmt.Sprintf("%d", time.Now().Unix())
 	DefaultId                   = uuid.New().String()
 	DefaultServer        Server = newRpcServer()
 	DefaultRouter               = newRpcRouter()
@@ -140,6 +142,11 @@ func Init(opt ...Option) {
 // NewServer returns a new server with options passed in
 func NewServer(opt ...Option) Server {
 	return newRpcServer(opt...)
+}
+
+// NewRouter returns a new router
+func NewRouter() *router {
+	return newRpcRouter()
 }
 
 // NewSubscriber creates a new subscriber interface with the given topic
