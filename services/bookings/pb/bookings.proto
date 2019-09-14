@@ -13,5 +13,20 @@ service BookingService {
   };
 }
 
-message CreateBookingRequest {}
-message CreateBookingResponse {}
+message CreateBookingRequest {
+  string userId = 1; // Unique ID number
+  string latitude = 2;
+  string longitude = 3;
+}
+message CreateBookingResponse {
+  int32 bookingId = 1;
+  Agent agent = 2;
+}
+
+// Agent Type
+message Agent {
+  string agentId = 1; // Unique ID number foe agent
+  string name = 2; // Name of agent
+  string vehicle = 3; // Vehicle of agent
+  int32 rating = 4; // Rating of agent
+}
