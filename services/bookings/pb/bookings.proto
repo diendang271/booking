@@ -15,8 +15,7 @@ service BookingService {
 
 message CreateBookingRequest {
   string userId = 1; // Unique ID number
-  string latitude = 2;
-  string longitude = 3;
+  Location location = 2;
 }
 message CreateBookingResponse {
   int32 bookingId = 1;
@@ -25,8 +24,14 @@ message CreateBookingResponse {
 
 // Agent Type
 message Agent {
-  string agentId = 1; // Unique ID number foe agent
+  string agentId = 1; // Unique ID number for agent
   string name = 2; // Name of agent
   string vehicle = 3; // Vehicle of agent
   int32 rating = 4; // Rating of agent
+}
+
+// Location Type
+message Location {
+  double Longitude = 1;
+  double Latitude = 2;
 }
