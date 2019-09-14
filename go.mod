@@ -1,4 +1,4 @@
-module gitlab.com/grab-learning-development/bootcamp-skeleton
+module gitlab.com/tech.learning.ext13/bootcamp-skeleton
 
 go 1.12
 

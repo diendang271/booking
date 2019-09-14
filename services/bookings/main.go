@@ -14,11 +14,11 @@ import (
 	"github.com/micro/go-micro"
 	"github.com/micro/go-micro/server"
 	mgrpc "github.com/micro/go-micro/service/grpc"
-	agentspb "gitlab.com/grab-learning-development/bootcamp-skeleton/services/agents/pb"
-	gwpb "gitlab.com/grab-learning-development/bootcamp-skeleton/services/bookings/gateway/pb"
-	"gitlab.com/grab-learning-development/bootcamp-skeleton/services/bookings/handlers"
-	"gitlab.com/grab-learning-development/bootcamp-skeleton/services/bookings/models"
-	pb "gitlab.com/grab-learning-development/bootcamp-skeleton/services/bookings/pb"
+	agentspb "gitlab.com/tech.learning.ext13/bootcamp-skeleton/services/agents/pb"
+	gwpb "gitlab.com/tech.learning.ext13/bootcamp-skeleton/services/bookings/gateway/pb"
+	"gitlab.com/tech.learning.ext13/bootcamp-skeleton/services/bookings/handlers"
+	"gitlab.com/tech.learning.ext13/bootcamp-skeleton/services/bookings/models"
+	pb "gitlab.com/tech.learning.ext13/bootcamp-skeleton/services/bookings/pb"
 	"google.golang.org/grpc"
 )
 

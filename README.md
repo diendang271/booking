@@ -15,8 +15,8 @@ In order to get started, make sure you have Golang, Docker and Protobuf installe
 Clone this repository by using `go get`:
 
 ```
-go get gitlab.com/grab-learning-development/bootcamp-skeleton/...
-cd $GOPATH/src/gitlab.com/grab-learning-development/bootcamp-skeleton
+go get gitlab.com/tech.learning.ext13/bootcamp-skeleton/...
+cd $GOPATH/src/gitlab.com/tech.learning.ext13/bootcamp-skeleton
 ```
 
 Note the code must be run from `$GOPATH/src`. (If you don't have `$GOPATH` set, see https://github.com/golang/go/wiki/SettingGOPATH)
