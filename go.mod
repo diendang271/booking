@@ -1,4 +1,4 @@
-module gitlab.com/grab-learning-development/bootcamp-skeleton
+module github.com/diendang271/booking
 
 go 1.12
 

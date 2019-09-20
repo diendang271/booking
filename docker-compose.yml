@@ -13,7 +13,7 @@ services:
       - agent-service
       - storage
   agent-service: 
-    image: "grabbootcamp/agents-srv"
+    image: "diendang/agents-svc"
     ports:
       - "8081:8081"
       - "9091:9091"

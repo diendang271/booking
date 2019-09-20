@@ -4,11 +4,11 @@ package handlers
 import (
 	"context"
 
+	agents_pb "github.com/diendang271/booking/services/agents/pb"
+	"github.com/diendang271/booking/services/bookings/models"
+	pb "github.com/diendang271/booking/services/bookings/pb"
 	"github.com/go-log/log"
 	"github.com/micro/go-micro/client"
-	agents_pb "gitlab.com/grab-learning-development/bootcamp-skeleton/services/agents/pb"
-	"gitlab.com/grab-learning-development/bootcamp-skeleton/services/bookings/models"
-	pb "gitlab.com/grab-learning-development/bootcamp-skeleton/services/bookings/pb"
 )
 
 type AgentService interface {
